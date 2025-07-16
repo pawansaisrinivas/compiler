@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Play, Loader2 } from 'lucide-react';
-import { runCodeAnalysis } from '@/app/actions';
+import { runCodeAnalysis, runCodeExecution } from '@/app/actions';
 import { useToast } from "@/hooks/use-toast";
 import type { AnalyzeCodeForErrorsOutput } from '@/ai/flows/code-error-check';
 import { OutputDisplay } from './output-display';
@@ -26,13 +26,6 @@ const starterCode: Record<string, string> = {
   java: 'public class HelloWorld {\n    public static void main(String[] args) {\n        System.out.println("Hello, World!")\n    }\n}', // Missing semicolon
 };
 
-const mockOutput: Record<string, string> = {
-    python: 'Hello, World!',
-    c: 'Hello, World!',
-    cpp: 'Hello, World!',
-    java: 'Hello, World!',
-}
-
 export function CodeExecutorClient() {
   const [language, setLanguage] = useState(languages[0].value);
   const [code, setCode] = useState(starterCode[languages[0].value]);
@@ -52,18 +45,31 @@ export function CodeExecutorClient() {
     startTransition(async () => {
       setOutput('');
       setAnalysisResult(null);
-      const result = await runCodeAnalysis({ code, language });
+      const [analysis, execution] = await Promise.all([
+          runCodeAnalysis({ code, language }),
+          runCodeExecution({ code, language })
+      ]);
 
-      if ('error' in result) {
+      if ('error' in analysis) {
         toast({
           variant: 'destructive',
           title: 'Error',
-          description: result.error,
+          description: analysis.error,
         });
         setAnalysisResult(null);
       } else {
-        setAnalysisResult(result);
-        setOutput(mockOutput[language] || 'Execution finished.');
+        setAnalysisResult(analysis);
+      }
+      
+      if ('error' in execution) {
+        toast({
+            variant: 'destructive',
+            title: 'Execution Error',
+            description: execution.error,
+        });
+        setOutput('');
+      } else {
+          setOutput(execution.output);
       }
     });
   };
