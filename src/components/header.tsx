@@ -6,7 +6,7 @@ export function Header() {
       <div className="container mx-auto flex items-center gap-3">
         <Logo className="h-7 w-7 text-primary" />
         <h1 className="text-xl font-bold tracking-tight text-foreground">
-          Code Executor
+          Code Ace
         </h1>
       </div>
     </header>
